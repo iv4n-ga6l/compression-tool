@@ -1,82 +1,32 @@
-use std::collections::BinaryHeap;
-use std::cmp::Ordering;
 use std::collections::HashMap;
 
-/// A node in the binary tree.
-#[derive(Debug, Eq)]
-pub struct Node {
-    pub character: Option<char>, // None for internal nodes, Some(char) for leaf nodes
-    pub frequency: usize,
-    pub left: Option<Box<Node>>,
-    pub right: Option<Box<Node>>,
-}
-
-impl Node {
-    /// Creates a new leaf node.
-    pub fn new_leaf(character: char, frequency: usize) -> Self {
-        Node {
-            character: Some(character),
-            frequency,
-            left: None,
-            right: None,
-        }
-    }
-
-    /// Creates a new internal node.
-    pub fn new_internal(frequency: usize, left: Node, right: Node) -> Self {
-        Node {
-            character: None,
-            frequency,
-            left: Some(Box::new(left)),
-            right: Some(Box::new(right)),
-        }
-    }
-}
-
-impl Ord for Node {
-    fn cmp(&self, other: &Self) -> Ordering {
-        // Reverse the order to make BinaryHeap a min-heap
-        other.frequency.cmp(&self.frequency)
-    }
-}
-
-impl PartialOrd for Node {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq for Node {
-    fn eq(&self, other: &Self) -> bool {
-        self.frequency == other.frequency
-    }
-}
-
-/// Builds a binary tree (Huffman Tree) from a frequency table.
+/// Generates a prefix-code table from the Huffman tree.
 ///
 /// # Arguments
-/// * `frequency_table` - A `HashMap` where the keys are characters and the values are their respective frequencies.
+/// * `root` - The root node of the Huffman tree.
 ///
 /// # Returns
-/// The root node of the constructed binary tree.
-pub fn build_tree(frequency_table: HashMap<char, usize>) -> Option<Node> {
-    let mut heap = BinaryHeap::new();
-
-    // Create a leaf node for each character and add it to the heap
-    for (character, frequency) in frequency_table {
-        heap.push(Node::new_leaf(character, frequency));
+/// A `HashMap` where keys are characters and values are their corresponding binary codes.
+pub fn generate_prefix_codes(root: &Node) -> HashMap<char, String> {
+    let mut codes = HashMap::new();
+    
+    /// Helper function to recursively traverse the tree and build codes.
+    fn traverse(node: &Node, prefix: String, codes: &mut HashMap<char, String>) {
+        if let Some(character) = node.character {
+            // Leaf node: store the code for the character
+            codes.insert(character, prefix);
+        } else {
+            // Internal node: traverse left and right children
+            if let Some(ref left) = node.left {
+                traverse(left, format!("{}0", prefix), codes);
+            }
+            if let Some(ref right) = node.right {
+                traverse(right, format!("{}1", prefix), codes);
+            }
+        }
     }
 
-    // Merge nodes until only one tree remains
-    while heap.len() > 1 {
-        let left = heap.pop().unwrap();
-        let right = heap.pop().unwrap();
-
-        // Create a new internal node with the combined frequency
-        let merged_node = Node::new_internal(left.frequency + right.frequency, left, right);
-        heap.push(merged_node);
-    }
-
-    // The remaining node is the root of the tree
-    heap.pop()
+    // Start traversal from the root
+    traverse(root, String::new(), &mut codes);
+    codes
 }
