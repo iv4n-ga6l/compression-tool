@@ -1,22 +1,23 @@
 use std::collections::HashMap;
 
-use compression_tool::tree::{build_tree, Node};
+use compression_tool::tree::{build_tree, generate_prefix_codes};
 
 #[test]
-fn test_build_tree_single_character() {
+fn test_generate_prefix_codes_single_character() {
     let mut frequency_table = HashMap::new();
     frequency_table.insert('a', 5);
 
     let tree = build_tree(frequency_table).expect("Tree should not be None");
+    let codes = generate_prefix_codes(&tree);
 
-    assert_eq!(tree.character, Some('a'));
-    assert_eq!(tree.frequency, 5);
-    assert!(tree.left.is_none());
-    assert!(tree.right.is_none());
+    let mut expected = HashMap::new();
+    expected.insert('a', "".to_string());
+
+    assert_eq!(codes, expected);
 }
 
 #[test]
-fn test_build_tree_multiple_characters() {
+fn test_generate_prefix_codes_multiple_characters() {
     let mut frequency_table = HashMap::new();
     frequency_table.insert('a', 5);
     frequency_table.insert('b', 9);
@@ -26,17 +27,28 @@ fn test_build_tree_multiple_characters() {
     frequency_table.insert('f', 45);
 
     let tree = build_tree(frequency_table).expect("Tree should not be None");
+    let codes = generate_prefix_codes(&tree);
 
-    // Verify the root node frequency
-    assert_eq!(tree.frequency, 100); // Sum of all frequencies
+    // Verify prefix codes (partial checks)
+    assert!(codes.contains_key('a'));
+    assert!(codes.contains_key('b'));
+    assert!(codes.contains_key('c'));
+    assert!(codes.contains_key('d'));
+    assert!(codes.contains_key('e'));
+    assert!(codes.contains_key('f'));
 
-    // Verify the tree structure (partial checks)
-    assert!(tree.left.is_some());
-    assert!(tree.right.is_some());
+    // Ensure prefix property
+    for (key, code) in &codes {
+        for (other_key, other_code) in &codes {
+            if key != other_key {
+                assert!(!other_code.starts_with(code));
+            }
+        }
+    }
 }
 
 #[test]
-fn test_build_tree_empty_frequency_table() {
+fn test_generate_prefix_codes_empty_tree() {
     let frequency_table: HashMap<char, usize> = HashMap::new();
 
     let tree = build_tree(frequency_table);
