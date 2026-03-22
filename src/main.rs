@@ -6,6 +6,7 @@ use std::io::Write;
 mod frequency;
 mod tree;
 mod header;
+mod compression;
 
 fn main() {
     // Collect command-line arguments
@@ -51,11 +52,11 @@ fn main() {
         process::exit(1);
     }
 
-    // Placeholder for writing compressed data
-    if let Err(e) = writeln!(output_file, "COMPRESSED_DATA_START") {
-        eprintln!("Error writing compressed data delimiter: {}", e);
+    // Write compressed data
+    if let Err(e) = compression::compress_and_write(input_filename, &mut output_file, &root) {
+        eprintln!("Error writing compressed data to output file: {}", e);
         process::exit(1);
     }
 
-    println!("Header written successfully to {}", output_filename);
+    println!("Compression completed successfully. Output written to {}", output_filename);
 }
